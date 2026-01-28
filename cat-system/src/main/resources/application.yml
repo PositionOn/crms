@@ -1,0 +1,33 @@
+server:
+  port: 8089
+
+spring:
+  security:
+    user:
+      name: admin
+      password: 123456
+      roles: ADMIN
+  application:
+    name: rcms-backend
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  datasource:
+    url: jdbc:mysql://localhost:3306/cat_system?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: mysql123
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+rcms:
+  jwt:
+    issuer: rcms
+    secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS"
+    expireMinutes: 720
+

@@ -1,0 +1,155 @@
+CREATE DATABASE IF NOT EXISTS cat_system
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_0900_ai_ci;
+
+USE cat_system;
+
+-- 操作员
+CREATE TABLE IF NOT EXISTS operator (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(64) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(64) NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'ENABLED',
+  role VARCHAR(32) NOT NULL DEFAULT 'CASHIER',
+  last_login_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 桌台
+CREATE TABLE IF NOT EXISTS dining_table (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  code VARCHAR(32) NOT NULL UNIQUE,
+  type VARCHAR(16) NOT NULL DEFAULT 'HALL', -- HALL/ROOM
+  capacity INT NOT NULL DEFAULT 4,
+  status VARCHAR(16) NOT NULL DEFAULT 'FREE', -- FREE/OCCUPIED
+  current_order_id BIGINT NULL,
+  version BIGINT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_table_status(status),
+  INDEX idx_table_current_order(current_order_id)
+);
+
+-- 菜品分类
+CREATE TABLE IF NOT EXISTS dish_category (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(64) NOT NULL,
+  sort INT NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'ENABLED', -- ENABLED/DISABLED
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_category_name(name)
+);
+
+-- 菜品
+CREATE TABLE IF NOT EXISTS dish (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(128) NOT NULL,
+  category_id BIGINT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'ON', -- ON/OFF
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_dish_category(category_id),
+  INDEX idx_dish_status(status)
+);
+
+-- 折扣规则
+CREATE TABLE IF NOT EXISTS discount_rule (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(64) NOT NULL,
+  type VARCHAR(32) NOT NULL, -- FIXED_RATE/FULL_REDUCTION/MEMBER
+  params_json TEXT NOT NULL,
+  enabled TINYINT(1) NOT NULL DEFAULT 1,
+  priority INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_discount_enabled(enabled),
+  INDEX idx_discount_priority(priority)
+);
+
+-- 消费单/台账主表
+CREATE TABLE IF NOT EXISTS consume_order (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_no VARCHAR(64) NOT NULL UNIQUE,
+  table_id BIGINT NOT NULL,
+  operator_id BIGINT NOT NULL,
+  status VARCHAR(16) NOT NULL, -- OPEN/CLOSED/CANCELLED
+  opened_at DATETIME NOT NULL,
+  closed_at DATETIME NULL,
+  remark VARCHAR(255) NULL,
+
+  amount_before_discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  discount_rule_id BIGINT NULL,
+  discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  discount_reason VARCHAR(255) NULL,
+  amount_after_discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  INDEX idx_order_table(table_id),
+  INDEX idx_order_operator(operator_id),
+  INDEX idx_order_status(status),
+  INDEX idx_order_opened(opened_at),
+  INDEX idx_order_closed(closed_at)
+);
+
+-- 消费明细
+CREATE TABLE IF NOT EXISTS consume_order_item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_id BIGINT NOT NULL,
+  dish_id BIGINT NOT NULL,
+  dish_name_snapshot VARCHAR(128) NOT NULL,
+  unit_price_snapshot DECIMAL(10,2) NOT NULL,
+  quantity INT NOT NULL,
+  line_amount DECIMAL(10,2) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_item_order(order_id),
+  INDEX idx_item_dish(dish_id)
+);
+
+-- 支付
+CREATE TABLE IF NOT EXISTS payment (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_id BIGINT NOT NULL,
+  method VARCHAR(16) NOT NULL, -- CASH/WECHAT/ALIPAY/CARD
+  pay_amount DECIMAL(10,2) NOT NULL,
+  change_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  paid_at DATETIME NOT NULL,
+  operator_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_pay_order(order_id),
+  INDEX idx_pay_method(method),
+  INDEX idx_pay_paid_at(paid_at)
+);
+
+-- 操作日志（M3 用，这里先建表）
+CREATE TABLE IF NOT EXISTS operation_log (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  operator_id BIGINT NOT NULL,
+  action VARCHAR(64) NOT NULL,
+  target_type VARCHAR(64) NULL,
+  target_id BIGINT NULL,
+  detail_json TEXT NULL,
+  result VARCHAR(16) NOT NULL, -- SUCCESS/FAIL
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_log_operator(operator_id),
+  INDEX idx_log_created(created_at)
+);
+
+-- 备份记录（M3 用，这里先建表）
+CREATE TABLE IF NOT EXISTS backup_record (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  file_name VARCHAR(255) NOT NULL,
+  file_path VARCHAR(1024) NOT NULL,
+  backup_type VARCHAR(16) NOT NULL, -- MANUAL/SCHEDULED
+  operator_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  status VARCHAR(16) NOT NULL
+);
+

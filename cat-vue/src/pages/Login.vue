@@ -6,10 +6,10 @@
       </template>
       <el-form :model="form" label-width="80px" @keyup.enter="onSubmit">
         <el-form-item label="账号">
-          <el-input v-model="form.username" placeholder="admin" />
+          <el-input v-model="form.username" placeholder="" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="form.password" placeholder="admin123" type="password" show-password />
+          <el-input v-model="form.password" placeholder="" type="password" show-password />
         </el-form-item>
         <el-button type="primary" style="width: 100%" :loading="loading" @click="onSubmit">登录</el-button>
       </el-form>

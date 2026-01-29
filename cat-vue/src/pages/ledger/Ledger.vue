@@ -48,9 +48,10 @@
       <el-table-column prop="amountAfterDiscount" label="实收" width="100">
         <template #default="{ row }">￥{{ money(row.amountAfterDiscount) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="120">
+      <el-table-column label="操作" width="180">
         <template #default="{ row }">
           <el-button size="small" @click="openDetail(row)">详情</el-button>
+          <el-button size="small" type="primary" @click="openReceipt(row)">打印小票</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -120,6 +121,74 @@
         <div v-else style="margin-top: 8px; color: #999">暂无支付记录</div>
       </template>
     </el-drawer>
+
+    <el-dialog v-model="receiptVisible" title="结账凭证" width="420px">
+      <div class="receipt" v-if="receiptData">
+        <div class="receipt__header">
+          <div class="receipt__brand">收银小票</div>
+          <div class="receipt__muted">Order No: {{ receiptData.order.orderNo }}</div>
+        </div>
+        <div class="receipt__section">
+          <div class="receipt__row">
+            <span>桌台</span>
+            <span>{{ receiptData.order.tableCode || '-' }}</span>
+          </div>
+          <div class="receipt__row">
+            <span>开台</span>
+            <span>{{ receiptData.order.openedAt }}</span>
+          </div>
+          <div class="receipt__row">
+            <span>结账</span>
+            <span>{{ receiptData.order.closedAt || '-' }}</span>
+          </div>
+          <div class="receipt__row">
+            <span>状态</span>
+            <span>{{ orderStatusLabel(receiptData.order.status) }}</span>
+          </div>
+        </div>
+
+        <div class="receipt__section">
+          <div class="receipt__row receipt__row--head">
+            <span>菜品</span>
+            <span>数量</span>
+            <span>金额</span>
+          </div>
+          <div v-for="it in receiptData.items" :key="it.id" class="receipt__row receipt__row--item">
+            <span>{{ it.dishNameSnapshot }}</span>
+            <span>x{{ it.quantity }}</span>
+            <span>￥{{ money(it.lineAmount) }}</span>
+          </div>
+        </div>
+
+        <div class="receipt__section">
+          <div class="receipt__row">
+            <span>折前金额</span>
+            <span>￥{{ money(receiptData.order.amountBeforeDiscount) }}</span>
+          </div>
+          <div class="receipt__row">
+            <span>折扣</span>
+            <span>-￥{{ money(receiptData.order.discountAmount) }}</span>
+          </div>
+          <div class="receipt__row">
+            <span>折扣原因</span>
+            <span>{{ receiptData.order.discountReason || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="receipt__section">
+          <div class="receipt__row receipt__row--total">
+            <span>应收</span>
+            <span>￥{{ money(receiptData.order.amountAfterDiscount) }}</span>
+          </div>
+        </div>
+
+        <div class="receipt__footer">感谢光临</div>
+      </div>
+      <template #footer>
+        <el-button @click="receiptVisible = false">关闭</el-button>
+        <el-button type="primary" @click="printReceipt">打印</el-button>
+      </template>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -136,6 +205,8 @@ const rows = ref<any[]>([])
 const detailVisible = ref(false)
 const detail = ref<OrderDetail | null>(null)
 const currentRow = ref<any | null>(null)
+const receiptVisible = ref(false)
+const receiptData = ref<OrderDetail | null>(null)
 
 const filters = reactive({
   tableCode: '',
@@ -198,6 +269,21 @@ async function openDetail(row: any) {
   }
 }
 
+async function openReceipt(row: any) {
+  if (!row?.id) return
+  try {
+    const res = await http.get(`/orders/${row.id}`)
+    receiptData.value = res.data
+    receiptVisible.value = true
+  } catch (e: any) {
+    ElMessage.error(e.message || '加载小票失败')
+  }
+}
+
+function printReceipt() {
+  window.print()
+}
+
 async function exportExcel(mode: 'detail' | 'summary') {
   const [startTime, endTime] = filters.range || []
   try {
@@ -230,5 +316,62 @@ load()
 </script>
 
 <style scoped>
+.receipt {
+  border: 1px dashed #d9d9d9;
+  padding: 12px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.receipt__header {
+  text-align: center;
+  margin-bottom: 6px;
+}
+.receipt__brand {
+  font-weight: 700;
+  font-size: 16px;
+}
+.receipt__muted {
+  color: #666;
+  font-size: 12px;
+}
+.receipt__section {
+  margin: 8px 0;
+}
+.receipt__row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.receipt__row--head {
+  font-weight: 600;
+  border-bottom: 1px dashed #ccc;
+  padding-bottom: 4px;
+}
+.receipt__row--head span:nth-child(1),
+.receipt__row--item span:nth-child(1) {
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+.receipt__row--head span:nth-child(2),
+.receipt__row--item span:nth-child(2) {
+  flex: 0 0 50px;
+  text-align: center;
+}
+.receipt__row--head span:nth-child(3),
+.receipt__row--item span:nth-child(3) {
+  flex: 0 0 70px;
+  text-align: right;
+}
+.receipt__row--total {
+  font-weight: 700;
+  border-top: 1px dashed #ccc;
+  padding-top: 4px;
+}
+.receipt__footer {
+  text-align: center;
+  margin-top: 8px;
+}
 </style>
 

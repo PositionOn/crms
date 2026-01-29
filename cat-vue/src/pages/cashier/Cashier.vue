@@ -29,7 +29,7 @@
               {{ tableStatusLabel(row.status) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="150">
+          <el-table-column label="操作" >
             <template #default="{ row }">
               <el-button size="small" type="primary" v-if="row.status === 'FREE'" @click="openTable(row)">开台</el-button>
               <el-button size="small" v-else @click="selectOccupied(row)">进入</el-button>
@@ -145,15 +145,17 @@
     </template>
   </el-dialog>
 
-  <el-dialog v-model="dishSelectVisible" title="选择菜品" width="640px">
+  <el-dialog v-model="dishSelectVisible" title="选择菜品" width="720px" class="dish-select-dialog">
     <div class="dish-dialog">
       <div class="dish-dialog-sidebar">
+<!--        <div class="category-header">菜品分类</div>-->
         <div
           class="dish-cat"
           :class="{ 'dish-cat--active': !selectedCategoryId }"
           @click="selectedCategoryId = null"
         >
-          全部
+<!--          <span class="dish-cat-icon">🍽️</span>-->
+          <span class="dish-cat-name">全部</span>
         </div>
         <div
           v-for="c in categories"
@@ -162,11 +164,15 @@
           :class="{ 'dish-cat--active': selectedCategoryId === c.id }"
           @click="selectedCategoryId = c.id"
         >
-          {{ c.name }}
+<!--          <span class="dish-cat-icon">📋</span>-->
+          <span class="dish-cat-name">{{ c.name }}</span>
         </div>
       </div>
       <div class="dish-dialog-main">
-        <div v-if="!filteredDishes.length" class="dish-empty">该分类下暂无菜品</div>
+        <div v-if="!filteredDishes.length" class="dish-empty">
+<!--          <div class="dish-empty-icon">🍜</div>-->
+          <div class="dish-empty-text">该分类下暂无菜品</div>
+        </div>
         <div v-else class="dish-grid">
           <div
             v-for="d in filteredDishes"
@@ -174,21 +180,24 @@
             class="dish-card"
             @click="selectDish(d)"
           >
-            <div class="dish-card-name">{{ d.name }}</div>
-            <div class="dish-card-meta">￥{{ money(d.price) }}</div>
+<!--            <div class="dish-card-icon">🍴</div>-->
+            <div class="dish-card-content">
+              <div class="dish-card-name">{{ d.name }}</div>
+              <div class="dish-card-price">￥{{ money(d.price) }}</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <template #footer>
-      <el-button @click="dishSelectVisible = false">关闭</el-button>
+      <el-button @click="dishSelectVisible = false" size="large">关闭</el-button>
     </template>
   </el-dialog>
 
   <el-dialog v-model="receiptVisible" title="结账凭证" width="420px">
     <div class="receipt" v-if="order">
       <div class="receipt__header">
-        <div class="receipt__brand">RCMS 收银小票</div>
+        <div class="receipt__brand">收银小票</div>
         <div class="receipt__muted">Order No: {{ order.order.orderNo }}</div>
       </div>
       <div class="receipt__section">
@@ -626,71 +635,168 @@ await Promise.all([loadTables(), loadDishes(), loadCategories()])
 
 .dish-dialog {
   display: flex;
-  gap: 12px;
-  min-height: 260px;
+  gap: 20px;
+  min-height: 400px;
+  max-height: 500px;
 }
 
 .dish-dialog-sidebar {
-  width: 140px;
-  border-right: 1px solid #ebeef5;
-  padding-right: 8px;
+  width: 160px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+
+.category-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .dish-cat {
-  padding: 6px 10px;
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   color: #606266;
+  transition: all 0.2s ease;
+  user-select: none;
 }
 
 .dish-cat + .dish-cat {
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+.dish-cat:hover {
+  background-color: #e8f4ff;
+  transform: translateX(2px);
 }
 
 .dish-cat--active {
-  background-color: #ecf5ff;
-  color: #409eff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.dish-cat-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.dish-cat-name {
+  flex: 1;
+  font-weight: 500;
 }
 
 .dish-dialog-main {
   flex: 1;
-  min-height: 220px;
+  min-height: 450px;
+  overflow-y: auto;
+  padding: 8px;
 }
 
 .dish-empty {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
   color: #999;
-  padding: 40px 0;
+}
+
+.dish-empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.dish-empty-text {
+  font-size: 14px;
+  color: #999;
 }
 
 .dish-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
 }
 
 .dish-card {
-  border: 1px solid #ebeef5;
-  border-radius: 6px;
-  padding: 10px 12px;
+  background: #fff;
+  border: 2px solid #ebeef5;
+  border-radius: 12px;
+  padding: 16px;
   cursor: pointer;
-  transition: all 0.12s ease-in-out;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.dish-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .dish-card:hover {
-  border-color: #409eff;
-  box-shadow: 0 0 4px rgba(64, 158, 255, 0.25);
+  border-color: #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  transform: translateY(-4px);
+}
+
+.dish-card:hover::before {
+  transform: scaleX(1);
+}
+
+.dish-card:active {
+  transform: translateY(-2px);
+}
+
+.dish-card-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  filter: grayscale(0.2);
+}
+
+.dish-card-content {
+  width: 100%;
 }
 
 .dish-card-name {
-  font-size: 14px;
-  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
-.dish-card-meta {
-  font-size: 12px;
-  color: #999;
+.dish-card-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .receipt {
@@ -717,17 +823,29 @@ await Promise.all([loadTables(), loadDishes(), loadCategories()])
 }
 .receipt__row {
   display: flex;
-  justify-content: space-between;
   gap: 8px;
+  align-items: flex-start;
 }
 .receipt__row--head {
   font-weight: 600;
   border-bottom: 1px dashed #ccc;
   padding-bottom: 4px;
 }
-.receipt__row--item span:first-child {
-  max-width: 180px;
+.receipt__row--head span:nth-child(1),
+.receipt__row--item span:nth-child(1) {
+  flex: 1;
+  min-width: 0;
   word-break: break-all;
+}
+.receipt__row--head span:nth-child(2),
+.receipt__row--item span:nth-child(2) {
+  flex: 0 0 50px;
+  text-align: center;
+}
+.receipt__row--head span:nth-child(3),
+.receipt__row--item span:nth-child(3) {
+  flex: 0 0 70px;
+  text-align: right;
 }
 .receipt__row--total {
   font-weight: 700;

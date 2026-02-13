@@ -251,6 +251,28 @@ cd cat-vue
 npm run build
 ```
 
+### Electron 桌面应用打包
+
+前端支持打包为 Electron 桌面应用，打包后无需 Node.js 环境即可运行。
+
+```bash
+cd cat-vue
+
+# Mac 打包 (生成 .dmg)
+pnpm build:mac
+
+# Windows 打包 (生成 .exe)
+pnpm build:win
+```
+
+打包后文件位于 `cat-vue/dist/` 目录。
+
+**使用说明：**
+1. 先启动后端服务 (localhost:8089) 和 MySQL
+2. 双击打开打包后的应用即可使用
+
+**注意：** 在 Mac 上打包 Windows 应用需要安装 Wine，建议在对应平台上打包。
+
 ### 数据库连接信息
 | 参数 | 值 |
 |------|-----|

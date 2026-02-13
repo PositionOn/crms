@@ -3,8 +3,12 @@ import { setActivePinia } from 'pinia'
 import { pinia } from '../store'
 import { useAuthStore } from '../store/auth'
 
+const baseURL = import.meta.env.PROD
+  ? 'http://localhost:8089/api'
+  : '/api'
+
 export const http = axios.create({
-  baseURL: '/api',
+  baseURL,
   timeout: 20000
 })
 

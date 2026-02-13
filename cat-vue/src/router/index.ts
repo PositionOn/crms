@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { setActivePinia } from 'pinia'
 import { pinia } from '../store'
 import { useAuthStore } from '../store/auth'
@@ -7,7 +7,7 @@ const Login = () => import('../pages/Login.vue')
 const Layout = () => import('../layout/Layout.vue')
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes: [
     { path: '/login', component: Login },
     {
